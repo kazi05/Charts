@@ -21,5 +21,7 @@ before_install:
   - ./carthage.sh bootstrap --platform $PLATFORM --no-use-binaries
 script:
   - bundle exec rake ci[$PLATFORM]
+  - swift build
+  - swift test
 after_success:
   - bash <(curl -s https://codecov.io/bash)
