@@ -61,6 +61,16 @@ class StackedBarChartViewController: DemoBaseViewController {
         
         chartView.rightAxis.enabled = false
         
+        let roundedRenderer = RoundedBarChartRenderer(
+            corners: [.topLeft, .topRight],
+            cornerRadius: 5,
+            dataProvider: chartView,
+            animator: chartView.chartAnimator,
+            viewPortHandler: chartView.viewPortHandler
+        )
+        
+        chartView.renderer = roundedRenderer
+        
         let xAxis = chartView.xAxis
         xAxis.labelPosition = .top
         
