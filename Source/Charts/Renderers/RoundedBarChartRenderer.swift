@@ -42,10 +42,24 @@ open class RoundedBarChartRenderer: BarLineScatterCandleBubbleRenderer
         var rects = [CGRect]()
     }
     
+    private struct BarDrawModel {
+        let rect: CGRect
+        let isNeedBordered: Bool
+    }
+    
     @objc open weak var dataProvider: BarChartDataProvider?
     private let corners: UIRectCorner
     private let cornerRadius: CGFloat
-    public var isRoundStackedValues = false
+    public lazy var roundStackedIndexes: [Int] = {
+        guard
+            let dataProvider = dataProvider,
+            let barData = dataProvider.barData,
+            let dataSet = barData.getDataSetByIndex(0) as? IBarChartDataSet
+            else { return  [] }
+        
+        return [dataSet.stackSize - 1]
+    }()
+    public var isNeedRoundUnderZeroValue = false
     
     @objc public init(corners: UIRectCorner, cornerRadius: CGFloat, dataProvider: BarChartDataProvider, animator: Animator, viewPortHandler: ViewPortHandler)
     {
@@ -408,10 +422,30 @@ open class RoundedBarChartRenderer: BarLineScatterCandleBubbleRenderer
         // In case the chart is stacked, we need to accomodate individual bars within accessibilityOrdereredElements
         let isStacked = dataSet.isStacked
         let stackSize = isStacked ? dataSet.stackSize : 1
+        var drawModels: [BarDrawModel] = []
+        
+        for (index, rect) in buffer.rects.enumerated() {
+            let drawModel = BarDrawModel(
+                rect: rect,
+                isNeedBordered: roundStackedIndexes.contains(index % stackSize)
+            )
+            drawModels.append(drawModel)
+            
+            if roundStackedIndexes.count == 1 && isNeedRoundUnderZeroValue {
+                if rect.height == 0 && roundStackedIndexes.contains(index % stackSize) {
+                    let elementIndex = max(0, min(index - 1, drawModels.count - 1))
+                    let previousDrawModel = drawModels[elementIndex]
+                    let newDrawModel = BarDrawModel(rect: previousDrawModel.rect, isNeedBordered: true)
+                    drawModels.remove(at: elementIndex)
+                    drawModels.insert(newDrawModel, at: elementIndex)
+                }
+            }
+        }
 
-        for j in stride(from: 0, to: buffer.rects.count, by: 1)
+        for j in stride(from: 0, to: drawModels.count, by: 1)
         {
-            let barRect = buffer.rects[j]
+            let barRect = drawModels[j].rect
+            let needDrawBordered = drawModels[j].isNeedBordered
 
             if (!viewPortHandler.isInBoundsLeft(barRect.origin.x + barRect.size.width))
             {
@@ -429,7 +463,7 @@ open class RoundedBarChartRenderer: BarLineScatterCandleBubbleRenderer
                 context.setFillColor(dataSet.color(atIndex: j).cgColor)
             }
             
-            if isRoundStackedValues || j % stackSize == stackSize - 1 {
+            if needDrawBordered {
                 let bezierPath = UIBezierPath(roundedRect: barRect, byRoundingCorners: corners, cornerRadii: CGSize(width: cornerRadius, height: cornerRadius))
                 context.addPath(bezierPath.cgPath)
                 context.drawPath(using: .fill)
@@ -790,6 +824,11 @@ open class RoundedBarChartRenderer: BarLineScatterCandleBubbleRenderer
                 let y1: Double
                 let y2: Double
                 
+                var stackIndex = high.stackIndex
+                var roundedRect = CGRect()
+                var roundedY1: Double? = nil
+                var roundedY2: Double? = nil
+                
                 if isStack
                 {
                     if dataProvider.isHighlightFullBarEnabled
@@ -803,6 +842,13 @@ open class RoundedBarChartRenderer: BarLineScatterCandleBubbleRenderer
                         
                         y1 = range?.from ?? 0.0
                         y2 = range?.to ?? 0.0
+                        
+                        if roundStackedIndexes.count == 1 && isNeedRoundUnderZeroValue {
+                            let roundedRange = e.ranges?[roundStackedIndexes[0]]
+                            
+                            roundedY1 = roundedRange?.from
+                            roundedY2 = roundedRange?.to
+                        }
                     }
                 }
                 else
@@ -815,7 +861,15 @@ open class RoundedBarChartRenderer: BarLineScatterCandleBubbleRenderer
                 
                 setHighlightDrawPos(highlight: high, barRect: barRect)
                 
-                if isRoundStackedValues || high.stackIndex == set.stackSize - 1 {
+                if let y1 = roundedY1, let y2 = roundedY2 {
+                    prepareBarHighlight(x: e.x, y1: y1, y2: y2, barWidthHalf: barData.barWidth / 2.0, trans: trans, rect: &roundedRect)
+                    
+                    if roundedRect.height == 0 && stackIndex == roundStackedIndexes[0] - 1 {
+                        stackIndex = roundStackedIndexes[0]
+                    }
+                }
+                
+                if roundStackedIndexes.contains(stackIndex) {
                     let bezierPath = UIBezierPath(roundedRect: barRect, byRoundingCorners: corners, cornerRadii: CGSize(width: cornerRadius, height: cornerRadius))
                     context.addPath(bezierPath.cgPath)
                     context.drawPath(using: .fill)

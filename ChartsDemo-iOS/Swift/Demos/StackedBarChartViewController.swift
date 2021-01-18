@@ -68,6 +68,7 @@ class StackedBarChartViewController: DemoBaseViewController {
             animator: chartView.chartAnimator,
             viewPortHandler: chartView.viewPortHandler
         )
+        roundedRenderer.isNeedRoundUnderZeroValue = true
         
         chartView.renderer = roundedRenderer
         
