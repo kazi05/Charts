@@ -37,10 +37,10 @@ open class BarChartData: BarLineScatterCandleBubbleChartData
     ///   - fromX: the starting point on the x-axis where the grouping should begin
     ///   - groupSpace: The space between groups of bars in values (not pixels) e.g. 0.8f for bar width 1f
     ///   - barSpace: The space between individual bars in values (not pixels) e.g. 0.1f for bar width 1f
-    @objc open func groupBars(fromX: Double, groupSpace: Double, barSpace: Double)
+    @objc open func groupBars(fromX: Double, groupSpace: Double, barSpace: Double, forceSingleGroup: Bool = false)
     {
         let setCount = _dataSets.count
-        if setCount <= 1
+        if setCount <= 1 && !forceSingleGroup
         {
             print("BarData needs to hold at least 2 BarDataSets to allow grouping.", terminator: "\n")
             return
