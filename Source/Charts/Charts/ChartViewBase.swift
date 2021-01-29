@@ -29,7 +29,7 @@ public protocol ChartViewDelegate
     /// - Parameters:
     ///   - entry: The selected Entry.
     ///   - highlight: The corresponding highlight object that contains information about the highlighted position such as dataSetIndex etc.
-    @objc optional func chartValueSelected(_ chartView: ChartViewBase, entry: ChartDataEntry, highlight: Highlight)
+    @objc optional func chartValueSelected(_ chartView: ChartViewBase, entry: ChartDataEntry, highlight: Highlight, at point: CGPoint)
     
     /// Called when a user stops panning between values on the chart
     @objc optional func chartViewDidEndPanning(_ chartView: ChartViewBase)
@@ -446,9 +446,9 @@ open class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     ///   - x: The x-value to highlight
     ///   - dataSetIndex: The dataset index to search in
     ///   - dataIndex: The data index to search in (only used in CombinedChartView currently)
-    @objc open func highlightValue(x: Double, dataSetIndex: Int, dataIndex: Int = -1)
+    @objc open func highlightValue(x: Double, dataSetIndex: Int, dataIndex: Int = -1, at point: CGPoint)
     {
-        highlightValue(x: x, dataSetIndex: dataSetIndex, dataIndex: dataIndex, callDelegate: true)
+        highlightValue(x: x, dataSetIndex: dataSetIndex, dataIndex: dataIndex, callDelegate: true, at: point)
     }
     
     /// Highlights the value at the given x-value and y-value in the given DataSet.
@@ -460,9 +460,9 @@ open class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     ///   - y: The y-value to highlight. Supply `NaN` for "any"
     ///   - dataSetIndex: The dataset index to search in
     ///   - dataIndex: The data index to search in (only used in CombinedChartView currently)
-    @objc open func highlightValue(x: Double, y: Double, dataSetIndex: Int, dataIndex: Int = -1)
+    @objc open func highlightValue(x: Double, y: Double, dataSetIndex: Int, dataIndex: Int = -1, at point: CGPoint)
     {
-        highlightValue(x: x, y: y, dataSetIndex: dataSetIndex, dataIndex: dataIndex, callDelegate: true)
+        highlightValue(x: x, y: y, dataSetIndex: dataSetIndex, dataIndex: dataIndex, callDelegate: true, at: point)
     }
     
     /// Highlights any y-value at the given x-value in the given DataSet.
@@ -473,9 +473,9 @@ open class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     ///   - dataSetIndex: The dataset index to search in
     ///   - dataIndex: The data index to search in (only used in CombinedChartView currently)
     ///   - callDelegate: Should the delegate be called for this change
-    @objc open func highlightValue(x: Double, dataSetIndex: Int, dataIndex: Int = -1, callDelegate: Bool)
+    @objc open func highlightValue(x: Double, dataSetIndex: Int, dataIndex: Int = -1, callDelegate: Bool, at point: CGPoint)
     {
-        highlightValue(x: x, y: .nan, dataSetIndex: dataSetIndex, dataIndex: dataIndex, callDelegate: callDelegate)
+        highlightValue(x: x, y: .nan, dataSetIndex: dataSetIndex, dataIndex: dataIndex, callDelegate: callDelegate, at: point)
     }
     
     /// Highlights the value at the given x-value and y-value in the given DataSet.
@@ -487,7 +487,7 @@ open class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     ///   - dataSetIndex: The dataset index to search in
     ///   - dataIndex: The data index to search in (only used in CombinedChartView currently)
     ///   - callDelegate: Should the delegate be called for this change
-    @objc open func highlightValue(x: Double, y: Double, dataSetIndex: Int, dataIndex: Int = -1, callDelegate: Bool)
+    @objc open func highlightValue(x: Double, y: Double, dataSetIndex: Int, dataIndex: Int = -1, callDelegate: Bool, at point: CGPoint)
     {
         guard let data = _data else
         {
@@ -497,11 +497,11 @@ open class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
         
         if dataSetIndex < 0 || dataSetIndex >= data.dataSetCount
         {
-            highlightValue(nil, callDelegate: callDelegate)
+            highlightValue(nil, callDelegate: callDelegate, at: point)
         }
         else
         {
-            highlightValue(Highlight(x: x, y: y, dataSetIndex: dataSetIndex, dataIndex: dataIndex), callDelegate: callDelegate)
+            highlightValue(Highlight(x: x, y: y, dataSetIndex: dataSetIndex, dataIndex: dataIndex), callDelegate: callDelegate, at: point)
         }
     }
     
@@ -510,13 +510,13 @@ open class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     ///
     /// - Parameters:
     ///   - highlight: contains information about which entry should be highlighted
-    @objc open func highlightValue(_ highlight: Highlight?)
+    @objc open func highlightValue(_ highlight: Highlight?, at point: CGPoint)
     {
-        highlightValue(highlight, callDelegate: false)
+        highlightValue(highlight, callDelegate: false, at: point)
     }
 
     /// Highlights the value selected by touch gesture.
-    @objc open func highlightValue(_ highlight: Highlight?, callDelegate: Bool)
+    @objc open func highlightValue(_ highlight: Highlight?, callDelegate: Bool, at point: CGPoint)
     {
         var entry: ChartDataEntry?
         var h = highlight
@@ -546,7 +546,7 @@ open class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
             if let h = h
             {
                 // notify the listener
-                delegate.chartValueSelected?(self, entry: entry!, highlight: h)
+                delegate.chartValueSelected?(self, entry: entry!, highlight: h, at: point)
             }
             else
             {

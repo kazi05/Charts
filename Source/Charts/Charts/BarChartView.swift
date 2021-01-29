@@ -134,9 +134,9 @@ open class BarChartView: BarLineChartViewBase, BarChartDataProvider
     ///   - x:
     ///   - dataSetIndex:
     ///   - stackIndex: the index inside the stack - only relevant for stacked entries
-    @objc open func highlightValue(x: Double, dataSetIndex: Int, stackIndex: Int)
+    @objc open func highlightValue(x: Double, dataSetIndex: Int, stackIndex: Int, at point: CGPoint)
     {
-        highlightValue(Highlight(x: x, dataSetIndex: dataSetIndex, stackIndex: stackIndex))
+        highlightValue(Highlight(x: x, dataSetIndex: dataSetIndex, stackIndex: stackIndex), at: point)
     }
 
     // MARK: Accessors
